@@ -143,11 +143,3 @@ For other platforms, ensure you:
 2. Configure all environment variables
 3. Build the project with `npm run build`
 4. Start the server with `npm start`
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
