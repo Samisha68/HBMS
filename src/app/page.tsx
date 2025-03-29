@@ -11,6 +11,7 @@ export default async function DashboardPage() {
     redirect('/auth/signin')
   }
   
+  // You might want to fetch real data here instead of using empty values
   return <DashboardContent user={user} data={{
     totalBeds: 0,
     occupiedBeds: 0,

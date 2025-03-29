@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/app/ components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/app/ components/ui/card"
 import { Button } from "@/app/ components/ui/button"
 import { Input } from "@/app/ components/ui/input"
 import { Label } from "@/app/ components/ui/label"
@@ -21,26 +21,19 @@ export default function SignInPage() {
     setIsLoading(true)
     setError("")
 
-    try {
-      const result = await signIn("credentials", {
-        redirect: false,
-        email,
-        password,
-      })
+    const result = await signIn("credentials", {
+      redirect: false,
+      email,
+      password,
+    })
 
-      if (result?.error) {
-        setError("Invalid email or password")
-        setIsLoading(false)
-        return
-      }
-
-      // Redirect to dashboard on success
-      router.push("/")
-      router.refresh()
-    } catch (error) {
-      setError("An error occurred. Please try again.")
+    if (result?.error) {
+      setError("Invalid email or password")
       setIsLoading(false)
+      return
     }
+
+    router.push("/")
   }
 
   const handleGoogleSignIn = () => {
@@ -48,70 +41,30 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex items-center justify-center mb-4">
-            <BedDouble className="h-12 w-12 text-blue-600" />
-          </div>
-          <CardTitle className="text-2xl font-bold text-center">Sign in to Hospital Dashboard</CardTitle>
-          <CardDescription className="text-center">
-            Enter your credentials to access the dashboard
-          </CardDescription>
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4" role="alert">
-              <span className="block sm:inline">{error}</span>
-            </div>
-          )}
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 p-6">
+      <Card className="w-full max-w-sm shadow-lg">
+        <CardHeader className="text-center">
+          <BedDouble className="h-12 w-12 text-blue-600 mx-auto" />
+          <CardTitle className="text-xl font-bold">Sign in to Dashboard</CardTitle>
         </CardHeader>
+        {error && <p className="text-red-600 text-center">{error}</p>}
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-500">
-                  Forgot password?
-                </a>
-              </div>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+            <div>
+              <Label htmlFor="password">Password</Label>
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
+          <CardFooter className="flex flex-col gap-3">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign in"}
             </Button>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-              </div>
-            </div>
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="w-full"
-              onClick={handleGoogleSignIn}
-            >
-              Google
+            <Button type="button" className="w-full border bg-white text-gray-700" onClick={handleGoogleSignIn}>
+              Continue with Google
             </Button>
           </CardFooter>
         </form>
