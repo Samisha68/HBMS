@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import bcrypt from 'bcrypt';
-import connectDB from '@/lib/mongodb';
-import User from '@/models/User';
+import bcrypt from 'bcryptjs';
+import clientPromise from '@/app/lib/mongodb';
 
 export async function POST(request: Request) {
   try {
@@ -14,9 +13,10 @@ export async function POST(request: Request) {
       );
     }
 
-    await connectDB();
+    const client = await clientPromise;
+    const db = client.db();
 
-    const user = await User.findOne({ email });
+    const user = await db.collection('users').findOne({ email });
     if (!user) {
       return NextResponse.json(
         { error: 'Invalid credentials' },
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       message: 'Login successful',
       user: {
-        id: user._id,
+        id: user._id.toString(),
         name: user.name,
         email: user.email,
         role: user.role,

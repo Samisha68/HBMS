@@ -1,93 +1,90 @@
-import { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { MongoDBAdapter } from "@auth/mongodb-adapter"
-import clientPromise from "./mongodb"
-import bcrypt from "bcrypt"
+import bcrypt from "bcryptjs"
+import clientPromise from "@/app/lib/mongodb"
+import { JWT } from "next-auth/jwt"
+import { Session } from "next-auth"
 
-// Export auth options from a separate file so it can be imported elsewhere
-export const authOptions: NextAuthOptions = {
-  adapter: MongoDBAdapter(clientPromise),
+export const authOptions = {
   providers: [
-    // Google provider
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-      authorization: {
-        params: {
-          prompt: "consent",
-          access_type: "offline",
-          response_type: "code"
-        }
-      }
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
-    
-    // Credentials provider
     CredentialsProvider({
-      name: 'Credentials',
+      name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          return null
+          throw new Error("Invalid credentials")
         }
 
         const client = await clientPromise
         const db = client.db()
-        const user = await db.collection('users').findOne({ email: credentials.email })
+        const user = await db.collection("users").findOne({ email: credentials.email })
 
-        if (!user || !user.password) {
-          return null
+        if (!user || !user?.password) {
+          throw new Error("Invalid credentials")
         }
 
-        const passwordMatch = await bcrypt.compare(
+        const isCorrectPassword = await bcrypt.compare(
           credentials.password,
           user.password
         )
 
-        if (!passwordMatch) {
-          return null
+        if (!isCorrectPassword) {
+          throw new Error("Invalid credentials")
         }
 
         return {
           id: user._id.toString(),
-          email: user.email,
           name: user.name,
+          email: user.email,
+          role: user.role || "user",
           image: user.image,
         }
       }
-    }),
+    })
   ],
-  session: {
-    strategy: "jwt",
-  },
   pages: {
     signIn: "/auth/signin",
-    error: "/auth/error",
   },
   callbacks: {
-    async session({ session, token }) {
-      if (session.user && token.sub) {
-        // Ensure user.id is always a string (not undefined)
-        session.user.id = token.sub
+    async signIn({ user, account }: { user: any; account: any }) {
+      if (account?.provider === "google") {
+        const client = await clientPromise
+        const db = client.db()
+        
+        const existingUser = await db.collection("users").findOne({ email: user.email })
+        
+        if (!existingUser) {
+          await db.collection("users").insertOne({
+            name: user.name,
+            email: user.email,
+            image: user.image,
+            role: "user",
+            createdAt: new Date(),
+          })
+        }
+      }
+      return true
+    },
+    async session({ session, token }: { session: Session; token: JWT }) {
+      if (session?.user) {
+        session.user.id = token.sub || ""
+        session.user.role = token.role || "user"
       }
       return session
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user }: { token: JWT; user: any }) {
       if (user) {
         token.id = user.id
-        token.sub = user.id
+        token.role = user.role || "user"
       }
       return token
-    },
-    async redirect({ url, baseUrl }) {
-      if (url.startsWith(baseUrl)) {
-        return url
-      }
-      return `${baseUrl}/`
     }
   },
-  debug: process.env.NODE_ENV === "development",
 }

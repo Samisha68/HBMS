@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import Bed from '@/models/Bed';
+import clientPromise from '@/app/lib/mongodb';
+import { ObjectId } from 'mongodb';
 
 export async function PATCH(
   request: Request,
@@ -16,9 +16,10 @@ export async function PATCH(
       );
     }
 
-    await connectDB();
+    const client = await clientPromise;
+    const db = client.db();
 
-    const bed = await Bed.findById(params.id);
+    const bed = await db.collection('beds').findOne({ _id: new ObjectId(params.id) });
     if (!bed) {
       return NextResponse.json(
         { error: 'Bed not found' },
@@ -26,16 +27,29 @@ export async function PATCH(
       );
     }
 
-    bed.status = status;
-    bed.lastUpdated = new Date();
+    const result = await db.collection('beds').updateOne(
+      { _id: new ObjectId(params.id) },
+      {
+        $set: {
+          status,
+          lastUpdated: new Date(),
+          ...(status === 'Available' && { patient: null })
+        }
+      }
+    );
 
-    if (status === 'Available') {
-      bed.patient = undefined;
+    if (result.modifiedCount === 0) {
+      return NextResponse.json(
+        { error: 'Failed to update bed status' },
+        { status: 500 }
+      );
     }
 
-    await bed.save();
-
-    return NextResponse.json(bed);
+    return NextResponse.json({
+      ...bed,
+      status,
+      lastUpdated: new Date()
+    });
   } catch (error) {
     console.error('Error updating bed status:', error);
     return NextResponse.json(

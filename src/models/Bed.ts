@@ -1,39 +1,35 @@
-import { ObjectId } from 'mongodb';
+import { Schema, model, models } from 'mongoose';
 
-export interface Bed {
-  _id?: ObjectId;
-  bedNumber: string;
-  bedType: 'ICU' | 'General Ward' | 'Special Care';
-  status: 'Available' | 'Occupied' | 'Under Maintenance';
-  patient?: {
-    name?: string;
-    age?: number;
-    contact?: string;
-    medicalReason?: string;
-  };
-  lastUpdated?: Date;
-}
-
-export const bedSchema = {
-  bedNumber: { type: 'string', required: true },
-  bedType: { 
-    type: 'string', 
-    enum: ['ICU', 'General Ward', 'Special Care'],
-    required: true 
+const BedSchema = new Schema({
+  number: {
+    type: String,
+    required: [true, 'Bed number is required'],
+    unique: true,
   },
-  status: { 
-    type: 'string', 
-    enum: ['Available', 'Occupied', 'Under Maintenance'],
-    default: 'Available'
+  ward: {
+    type: String,
+    required: [true, 'Ward is required'],
+  },
+  status: {
+    type: String,
+    enum: ['AVAILABLE', 'OCCUPIED', 'MAINTENANCE'],
+    default: 'AVAILABLE',
   },
   patient: {
-    type: 'object',
-    properties: {
-      name: { type: 'string' },
-      age: { type: 'number' },
-      contact: { type: 'string' },
-      medicalReason: { type: 'string' }
-    }
+    name: String,
+    age: Number,
+    contact: String,
+    medicalReason: String,
   },
-  lastUpdated: { type: 'date', default: () => new Date() }
-}; 
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+const Bed = models.Bed || model('Bed', BedSchema);
+export default Bed; 

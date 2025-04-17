@@ -1,20 +1,29 @@
-import { ObjectId } from 'mongodb';
+import { Schema, model, models } from 'mongoose';
 
-export interface User {
-  _id?: ObjectId;
-  name: string;
-  email: string;
-  password?: string;
-  image?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
+const UserSchema = new Schema({
+  name: {
+    type: String,
+    required: [true, 'Name is required'],
+  },
+  email: {
+    type: String,
+    required: [true, 'Email is required'],
+    unique: true,
+  },
+  password: {
+    type: String,
+    required: [true, 'Password is required'],
+  },
+  role: {
+    type: String,
+    enum: ['admin', 'user'],
+    default: 'user',
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
-export const userSchema = {
-  name: { type: 'string', required: true },
-  email: { type: 'string', required: true, unique: true },
-  password: { type: 'string' },
-  image: { type: 'string' },
-  createdAt: { type: 'date', default: () => new Date() },
-  updatedAt: { type: 'date', default: () => new Date() }
-}; 
+const User = models.User || model('User', UserSchema);
+export default User; 
