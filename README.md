@@ -1,37 +1,69 @@
-# Hospital Bed Dashboard
+# SwiftBed: Streamlining Hospital Bed Utilization
 
-A modern dashboard application for hospital bed management. This system helps hospital staff track bed availability, manage patient admissions and discharges, and optimize resource allocation.
+SwiftBed is a modern web application designed to streamline hospital bed management and utilization. It provides real-time tracking of bed availability, patient assignments, and ward management, helping healthcare facilities optimize their resources and improve patient care.
 
 ## Features
 
-- 🏥 **Hospital Overview**: View total beds, availability, and occupancy rates at a glance
-- 🛌 **Bed Management**: Track bed status (available, occupied, maintenance)
-- 👨‍⚕️ **Patient Management**: Admit, track, and discharge patients
-- 🔑 **Authentication**: Secure login with email/password and Google OAuth
-- 📱 **Responsive Design**: Works on desktop and mobile devices
+- **Real-time Bed Management**
+  - Track bed availability and occupancy status
+  - Quick bed assignment and status updates
+  - Visual ward layout for easy navigation
+
+- **Patient Management**
+  - Efficient patient admission and discharge processes
+  - Patient information tracking
+  - Medical condition monitoring
+
+- **Ward Organization**
+  - Structured ward layout
+  - Specialized bed categorization
+  - Maintenance status tracking
+
+- **User Authentication**
+  - Secure login and registration
+  - Role-based access control
+  - Google authentication support
+
+- **Modern UI/UX**
+  - Responsive design
+  - Intuitive interface
+  - Real-time updates
+  - Dark/Light mode support
 
 ## Tech Stack
 
-- **Frontend**: Next.js 15, React, Tailwind CSS
-- **Backend**: Next.js API Routes
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: NextAuth.js
-- **Styling**: Tailwind CSS
+- **Frontend**
+  - Next.js 14
+  - React
+  - TypeScript
+  - Tailwind CSS
+  - Shadcn UI Components
+  - NextAuth.js
+
+- **Backend**
+  - Next.js API Routes
+  - MongoDB
+  - Mongoose
+
+- **Authentication**
+  - NextAuth.js
+  - Google OAuth
+  - JWT
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js (v18 or later)
-- npm or yarn
-- PostgreSQL database
+- MongoDB
+- Google OAuth credentials (for Google Sign-in)
 
 ### Installation
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/hospital-bed-dashboard.git
-   cd hospital-bed-dashboard
+   git clone https://github.com/yourusername/swiftbed.git
+   cd swiftbed
    ```
 
 2. Install dependencies:
@@ -39,107 +71,65 @@ A modern dashboard application for hospital bed management. This system helps ho
    npm install
    ```
 
-3. Set up environment variables by creating a `.env` file in the project root:
-   ```
-   # Database
-   DATABASE_URL="postgresql://username:password@localhost:5432/hospital_dashboard?schema=public"
-   
-   # Authentication
-   NEXTAUTH_SECRET="your-secret-key"
-   NEXTAUTH_URL="http://localhost:3001"
-   
-   # Google OAuth (optional)
-   GOOGLE_CLIENT_ID="your-google-client-id"
-   GOOGLE_CLIENT_SECRET="your-google-client-secret"
+3. Create a `.env` file in the root directory with the following variables:
+   ```env
+   MONGODB_URI=your_mongodb_connection_string
+   NEXTAUTH_SECRET=your_nextauth_secret
+   NEXTAUTH_URL=http://localhost:3001
+   GOOGLE_CLIENT_ID=your_google_client_id
+   GOOGLE_CLIENT_SECRET=your_google_client_secret
    ```
 
-4. Generate Prisma client and push schema to database:
+4. Start the development server:
    ```bash
-   npx prisma generate
-   npx prisma db push
+   npm run dev
    ```
 
-### Running the Application
-
-#### Development
-
-```bash
-npm run dev
-```
-
-The application will be available at http://localhost:3001
-
-#### Production
-
-```bash
-npm run build
-npm start
-```
+The application will be available at `http://localhost:3001`.
 
 ## Project Structure
 
 ```
-/
-├── prisma/                  # Prisma schema and migrations
-│   └── schema.prisma        # Database models
-├── public/                  # Static assets
-├── src/
-│   ├── app/                 # Next.js App Router
-│   │   ├── api/             # API routes
-│   │   │   └── auth/        # Authentication API
-│   │   ├── auth/            # Auth pages (signin, etc.)
-│   │   └── page.tsx         # Dashboard page
-│   ├── components/          # React components
-│   │   ├── dashboard/       # Dashboard components
-│   │   └── ui/              # UI components
-│   ├── lib/                 # Utility functions
-│   │   ├── auth.ts          # Auth utilities
-│   │   ├── auth-options.ts  # NextAuth configuration
-│   │   └── prisma.ts        # Prisma client
-│   └── types/               # TypeScript type definitions
-└── .env                     # Environment variables
+src/
+├── app/                    # Next.js app directory
+│   ├── api/               # API routes
+│   ├── auth/              # Authentication pages
+│   ├── beds/              # Bed management pages
+│   └── layout.tsx         # Root layout
+├── components/            # Reusable components
+│   ├── ui/               # UI components
+│   └── Layout.tsx        # Main layout component
+├── lib/                  # Utility functions
+└── types/               # TypeScript type definitions
 ```
 
-## Authentication
+## Usage
 
-The application uses NextAuth.js for authentication with two providers:
+1. **Authentication**
+   - Register a new account or sign in with Google
+   - Access the dashboard after authentication
 
-1. **Credentials Provider**: Email/password login
-2. **Google Provider**: OAuth login with Google
+2. **Bed Management**
+   - View bed status in the dashboard
+   - Click on a bed to update its status
+   - Assign patients to available beds
 
-To set up Google authentication:
-1. Create a project in [Google Cloud Console](https://console.cloud.google.com/)
-2. Configure the OAuth consent screen
-3. Create OAuth credentials
-4. Add authorized redirect URIs:
-   - For development: `http://localhost:3001/api/auth/callback/google`
-   - For production: `https://yourdomain.com/api/auth/callback/google`
+3. **Ward Management**
+   - Navigate through different wards
+   - Monitor bed availability
+   - Update maintenance status
 
-## Database Schema
+## Contributing
 
-The database schema includes the following main models:
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-- **Hospital**: Information about hospitals
-- **Ward**: Hospital sections/departments
-- **Bed**: Individual beds with status tracking
-- **Patient**: Patient information with admission data
-- **User**: Authentication and user management
+## License
 
-## Deployment
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-### Vercel
+## Acknowledgments
 
-This application is optimized for deployment on Vercel:
-
-1. Push your code to a GitHub repository
-2. Import the project in Vercel
-3. Configure the environment variables
-4. Deploy!
-
-### Other Platforms
-
-For other platforms, ensure you:
-1. Set up the PostgreSQL database
-2. Configure all environment variables
-3. Build the project with `npm run build`
-4. Start the server with `npm start`
+- Next.js team for the amazing framework
+- MongoDB for the database solution
+- Shadcn UI for the component library
+- All contributors and maintainers
