@@ -1,18 +1,25 @@
 import NextAuth, { type NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma } from "@/app/lib/prisma"
+import { MongoDBAdapter } from "@auth/mongodb-adapter"
+import clientPromise from "@/app/lib/mongodb"
 import bcrypt from "bcrypt"
 
 // Define auth options but don't export it directly from the route file
-const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+export const authOptions: NextAuthOptions = {
+  adapter: MongoDBAdapter(clientPromise),
   providers: [
     // Google provider
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      }
     }),
     
     // Credentials provider
@@ -27,11 +34,9 @@ const authOptions: NextAuthOptions = {
           return null
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email
-          }
-        })
+        const client = await clientPromise
+        const db = client.db()
+        const user = await db.collection('users').findOne({ email: credentials.email })
 
         if (!user || !user.password) {
           return null
@@ -47,47 +52,30 @@ const authOptions: NextAuthOptions = {
         }
 
         return {
-          id: user.id,
+          id: user._id.toString(),
           email: user.email,
           name: user.name,
-          image: user.image,
         }
       }
-    }),
+    })
   ],
   session: {
     strategy: "jwt",
   },
   pages: {
     signIn: "/auth/signin",
-    error: "/auth/error",
   },
   callbacks: {
     async session({ session, token }) {
-      if (session.user && token.sub) {
-        // Ensure user.id is always a string (not undefined)
+      if (session?.user) {
         session.user.id = token.sub
       }
       return session
     },
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id
-        token.sub = user.id
-      }
-      return token
-    },
-    async redirect({ url, baseUrl }) {
-      // Always redirect to the dashboard after sign in
-      return `${baseUrl}/`
-    }
   },
 }
 
-// Create the handler without exporting authOptions directly
 const handler = NextAuth(authOptions)
-
-// Only export the handler functions that Next.js route handlers expect
 export { handler as GET, handler as POST }
 
 // If you need to access authOptions elsewhere, create a separate file for it

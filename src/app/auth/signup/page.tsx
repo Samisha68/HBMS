@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
 import { Logo } from "@/components/ui/logo"
 
-export default function SignInPage() {
+export default function SignUpPage() {
   const router = useRouter()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
@@ -22,36 +21,51 @@ export default function SignInPage() {
     const formData = new FormData(e.currentTarget)
     const email = formData.get("email") as string
     const password = formData.get("password") as string
+    const confirmPassword = formData.get("confirmPassword") as string
+    const name = formData.get("name") as string
+
+    if (password !== confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive",
+      })
+      setIsLoading(false)
+      return
+    }
 
     try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+        }),
       })
 
-      if (result?.error) {
-        toast({
-          title: "Error",
-          description: "Invalid email or password",
-          variant: "destructive",
-        })
-      } else {
-        router.push("/")
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || "Failed to create account")
       }
+
+      toast({
+        title: "Success",
+        description: "Account created successfully. Please sign in.",
+      })
+      router.push("/auth/signin")
     } catch (error) {
       toast({
         title: "Error",
-        description: "Something went wrong. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create account",
         variant: "destructive",
       })
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl: "/" })
   }
 
   return (
@@ -66,6 +80,15 @@ export default function SignInPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  placeholder="Enter your full name"
+                  required
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -82,7 +105,17 @@ export default function SignInPage() {
                   id="password"
                   name="password"
                   type="password"
-                  placeholder="Enter your password"
+                  placeholder="Create a password"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="Confirm your password"
                   required
                 />
               </div>
@@ -91,32 +124,15 @@ export default function SignInPage() {
                 className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? "Signing in..." : "Sign in"}
+                {isLoading ? "Creating account..." : "Create account"}
               </Button>
             </form>
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
-                </span>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleGoogleSignIn}
-            >
-              Continue with Google
-            </Button>
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <a href="/auth/signup" className="text-primary hover:underline">
-                Sign up
+              Already have an account?{" "}
+              <a href="/auth/signin" className="text-primary hover:underline">
+                Sign in
               </a>
             </p>
           </CardFooter>
@@ -124,4 +140,4 @@ export default function SignInPage() {
       </div>
     </div>
   )
-}
+} 

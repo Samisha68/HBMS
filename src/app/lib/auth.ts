@@ -1,6 +1,6 @@
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/app/lib/auth-options"
-import { prisma } from "./prisma"
+import { getServerSession } from "next-auth"
+import { authOptions } from "./auth-options"
+import clientPromise from "./mongodb"
 
 // Get the current session on the server
 export async function getSession() {
@@ -9,33 +9,29 @@ export async function getSession() {
 
 // Get the current user on the server
 export async function getCurrentUser() {
+  const session = await getServerSession(authOptions)
+
+  if (!session?.user?.email) {
+    return null
+  }
+
   try {
-    const session = await getSession()
-    
-    if (!session?.user?.email) {
+    const client = await clientPromise
+    const db = client.db()
+    const currentUser = await db.collection('users').findOne({ 
+      email: session.user.email 
+    })
+
+    if (!currentUser) {
       return null
     }
-    
-    const currentUser = await prisma.user.findUnique({
-      where: {
-        email: session.user.email as string,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        image: true,
-        // Don't include password
-      }
-    })
-    
-    if (!currentUser) {
-      return session.user
+
+    return {
+      ...currentUser,
+      id: currentUser._id.toString(),
     }
-    
-    return currentUser
   } catch (error) {
-    console.error("Error getting current user:", error)
+    console.error('Error fetching current user:', error)
     return null
   }
 }

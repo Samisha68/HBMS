@@ -7,6 +7,10 @@ declare module "next-auth" {
   interface Session {
     user: {
       id: string  // Note: this is required, not optional
+      name?: string | null
+      email?: string | null
+      image?: string | null
+      role?: "admin" | "user" | null
     } & DefaultSession["user"]
   }
 
@@ -15,6 +19,10 @@ declare module "next-auth" {
    */
   interface User {
     id: string
+    name?: string | null
+    email?: string | null
+    image?: string | null
+    role?: "admin" | "user" | null
     // Add other custom fields here
   }
 }

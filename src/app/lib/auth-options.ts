@@ -1,18 +1,25 @@
-import { type NextAuthOptions } from "next-auth"
+import { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma } from "@/app/lib/prisma"
+import { MongoDBAdapter } from "@auth/mongodb-adapter"
+import clientPromise from "./mongodb"
 import bcrypt from "bcrypt"
 
 // Export auth options from a separate file so it can be imported elsewhere
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: MongoDBAdapter(clientPromise),
   providers: [
     // Google provider
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      }
     }),
     
     // Credentials provider
@@ -27,11 +34,9 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email
-          }
-        })
+        const client = await clientPromise
+        const db = client.db()
+        const user = await db.collection('users').findOne({ email: credentials.email })
 
         if (!user || !user.password) {
           return null
@@ -47,7 +52,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         return {
-          id: user.id,
+          id: user._id.toString(),
           email: user.email,
           name: user.name,
           image: user.image,
@@ -78,8 +83,11 @@ export const authOptions: NextAuthOptions = {
       return token
     },
     async redirect({ url, baseUrl }) {
-      // Always redirect to the dashboard after sign in
+      if (url.startsWith(baseUrl)) {
+        return url
+      }
       return `${baseUrl}/`
     }
   },
+  debug: process.env.NODE_ENV === "development",
 }

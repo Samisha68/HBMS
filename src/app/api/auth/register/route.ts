@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/app/lib/prisma'
+import clientPromise from '@/app/lib/mongodb'
 import bcrypt from 'bcrypt'
 
 export async function POST(req: NextRequest) {
@@ -14,10 +14,11 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const client = await clientPromise
+    const db = client.db()
+
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    })
+    const existingUser = await db.collection('users').findOne({ email })
 
     if (existingUser) {
       return NextResponse.json(
@@ -30,16 +31,19 @@ export async function POST(req: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 10)
 
     // Create user
-    await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-      },
+    const result = await db.collection('users').insertOne({
+      name,
+      email,
+      password: hashedPassword,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     })
 
     return NextResponse.json(
-      { message: "User registered successfully" },
+      { 
+        message: "User registered successfully",
+        userId: result.insertedId.toString()
+      },
       { status: 201 }
     )
   } catch (error) {
